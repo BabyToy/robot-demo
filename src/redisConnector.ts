@@ -6,7 +6,7 @@ dotenv.config();
 export default class RedisConnector {
   private _redis: RedisClientType;
 
-  constructor() {
+  constructor(source: string) {
     const url = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
     this._redis = createClient({ url });
@@ -16,7 +16,7 @@ export default class RedisConnector {
     });
 
     this._redis.on("connect", () => {
-      console.log("Controller connected");
+      console.log(`${source} connected`);
     });
   }
 

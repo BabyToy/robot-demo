@@ -15,7 +15,7 @@ if (!boardKey) {
 }
 
 (async () => {
-  const connector = new RedisConnector();
+  const connector = new RedisConnector("Board subscriber - main");
   await Promise.all([
     initBoard(),
     connector.connect(),
@@ -52,7 +52,6 @@ if (!boardKey) {
         try {
           parseCommands(commands);
         } catch (error) {
-          console.log("Catching error");
           if (error instanceof Error) {
             console.log(error.message);
           } else {

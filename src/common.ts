@@ -16,7 +16,8 @@ export enum Command {
 }
 
 /**
- * Zero-index coordinate
+ * One-index coordinate
+ * (1, 1) default position
  */
 export interface IPosition {
   x: number;

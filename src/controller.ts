@@ -8,7 +8,7 @@ if (!key) {
   throw new Error("REDIS_KEY undefined");
 }
 
-const connector = new RedisConnector();
+const connector = new RedisConnector("Controller publisher");
 
 export const initController = async () => {
   await connector.connect();
@@ -30,7 +30,7 @@ export const parseCommands = (commands: string[]) => {
       break;
     case Command.DIRECTION:
       // is command a valid direction?
-      if (!Object.keys(Command).includes(commands[1])) {
+      if (!Object.keys(Direction).includes(commands[1])) {
         throw new Error("Invalid direction");
       }
       // convert string to enum
@@ -56,12 +56,15 @@ export const sendCommand = async (command: ICommand) => {
         throw new Error("Invalid position");
       }
       break;
+    case Command.MOVE:
+    case Command.LEFT:
+    case Command.RIGHT:
+    case Command.DIRECTION:
     case Command.REPORT:
-      // await redisClient.hSet(key, instruction, "");
+    case Command.RETREAT:
       break;
     default:
       throw new Error("Invalid command");
-    // break;
   }
   await connector.redis.publish(key, JSON.stringify(command));
 };
