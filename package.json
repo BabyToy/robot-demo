@@ -1,0 +1,20 @@
+{
+  "name": "ai-media",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "nodemon": "^2.0.20",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.4"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start:inspect": "nodemon --watch src/** --ext \"ts,json\" --exec \"node --require ts-node/register --inspect src/index.ts\""
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "redis": "^4.5.1"
+  }
+}
