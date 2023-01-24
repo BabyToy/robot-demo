@@ -16,11 +16,7 @@ if (!boardKey) {
 
 (async () => {
   const connector = new RedisConnector("Board subscriber - main");
-  await Promise.all([
-    initBoard(),
-    connector.connect(),
-    initController(),
-  ]);
+  await Promise.all([initBoard(), connector.connect(), initController()]);
 
   const reader = readline.createInterface({
     input: process.stdin,
@@ -40,7 +36,7 @@ if (!boardKey) {
         reader.close();
         break;
       case "":
-        console.error("Command required");
+        console.log("Command required");
         break;
       default:
         // is command a valid command?
