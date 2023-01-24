@@ -1,23 +1,34 @@
 import dotenv from "dotenv";
-import { createClient } from "redis";
+import { createClient, RedisClientType } from "redis";
 
 dotenv.config();
 
-const url = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
-const redis = createClient({ url });
+export default class RedisConnector {
+  private _redis: RedisClientType;
 
-redis.on("error", (error) => {
-  console.log("Redis error", error);
-});
+  constructor() {
+    const url = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
-redis.on("connect", () => {
-  console.log("Controller connected");
-});
+    this._redis = createClient({ url });
 
-export const connect = async () => {
-  redis.connect();
-}
+    this._redis.on("error", (error) => {
+      console.log("Redis error", error);
+    });
 
-export const disconnect = async () => {
-  redis.disconnect();
+    this._redis.on("connect", () => {
+      console.log("Controller connected");
+    });
+  }
+
+  public get redis(): RedisClientType {
+    return this._redis;
+  }
+
+  public connect = async () => {
+    this._redis.connect();
+  };
+
+  public disconnect = async () => {
+    this._redis.disconnect();
+  };
 }

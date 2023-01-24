@@ -1,13 +1,26 @@
+import dotenv from "dotenv";
 import process from "process";
 import readline from "readline/promises";
 
 import { initBoard } from "./board";
 import { Command } from "./common";
 import { initController, parseCommands } from "./controller";
-import { connect } from "./redisConnector";
+import RedisConnector from "./redisConnector";
+
+dotenv.config();
+
+const boardKey = process.env.REDIS_FEEDBACK_KEY;
+if (!boardKey) {
+  throw new Error("REDIS_KEY undefined");
+}
 
 (async () => {
-  await Promise.all([initBoard(), initController(), connect()]);
+  const connector = new RedisConnector();
+  await Promise.all([
+    initBoard(),
+    connector.connect(),
+    initController(),
+  ]);
 
   const reader = readline.createInterface({
     input: process.stdin,
@@ -50,13 +63,20 @@ import { connect } from "./redisConnector";
     }
     reader.prompt();
   });
-  reader.on("close", () => {
+  reader.on("close", async () => {
     console.log("Closing controller");
+    await connector.disconnect();
     process.exit(0);
   });
-  reader.on("SIGINT", () => {
+  reader.on("SIGINT", async () => {
     console.log("SIGINT signal received");
+    // await connector.disconnect();
     reader.close();
+  });
+
+  await connector.redis.subscribe(boardKey, (message: string) => {
+    console.log(message);
+    reader.prompt();
   });
 })();
 

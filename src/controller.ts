@@ -1,29 +1,17 @@
-import dotenv from "dotenv";
 import process from "process";
-import { createClient } from "redis";
 
 import { Command, Direction, ICommand } from "./common";
-
-dotenv.config();
+import RedisConnector from "./redisConnector";
 
 const key = process.env.REDIS_KEY;
 if (!key) {
   throw new Error("REDIS_KEY undefined");
 }
 
-const url = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
-const redis = createClient({ url });
-
-redis.on("error", (error) => {
-  console.log("Redis error", error);
-});
-
-redis.on("connect", () => {
-  console.log("Controller connected");
-});
+const connector = new RedisConnector();
 
 export const initController = async () => {
-  await redis.connect();
+  await connector.connect();
 };
 
 export const parseCommands = (commands: string[]) => {
@@ -75,5 +63,5 @@ export const sendCommand = async (command: ICommand) => {
       throw new Error("Invalid command");
     // break;
   }
-  await redis.publish(key, JSON.stringify(command));
+  await connector.redis.publish(key, JSON.stringify(command));
 };
