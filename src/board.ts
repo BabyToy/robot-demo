@@ -171,7 +171,7 @@ export const initBoard = async () => {
         robot.direction = command.direction;
         break;
       case Command.REPORT:
-        publisher.redis.publish(boardKey, JSON.stringify(robot));
+        publish(JSON.stringify(robot));
         break;
       default:
         break;
