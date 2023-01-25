@@ -53,9 +53,9 @@ if (!boardKey) {
           await parseCommands(commands);
         } catch (error) {
           if (error instanceof Error) {
-            console.log(error.message);
+            console.log(`${error.message}`);
           } else {
-            console.log(error);
+            console.log(`${error}`);
           }
           reader.prompt();
         }
@@ -76,7 +76,7 @@ if (!boardKey) {
   });
 
   await connector.redis.subscribe(boardKey, (message: string) => {
-    console.log(message);
+    console.log(`\r\n${message}`);
     reader.prompt();
   });
 })();
