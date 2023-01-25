@@ -26,7 +26,11 @@ if (!boardKey) {
   reader.prompt();
 
   reader.on("line", (line) => {
-    const commands = line.trim().toUpperCase().split(" ");
+    const commands = line
+      .trim()
+      .toUpperCase()
+      .split(" ")
+      .filter((word) => word !== "");
     const command = commands[0];
     switch (command) {
       case "HELO":
@@ -45,15 +49,15 @@ if (!boardKey) {
           break;
         }
         // valid command at this point
-        try {
-          parseCommands(commands);
-        } catch (error) {
+        parseCommands(commands).catch((error) => {
           if (error instanceof Error) {
             console.log(error.message);
           } else {
             console.log(error);
           }
-        }
+          reader.prompt();
+        });
+
         break;
     }
     reader.prompt();

@@ -14,7 +14,7 @@ export const initController = async () => {
   await connector.connect();
 };
 
-export const parseCommands = (commands: string[]) => {
+export const parseCommands = async (commands: string[]) => {
   // convert string to enum
   const instruction = <Command>commands[0];
   switch (instruction) {
@@ -23,7 +23,7 @@ export const parseCommands = (commands: string[]) => {
         throw new Error("Invalid position");
       }
       const [x, y] = commands[1].split(",");
-      sendCommand({
+      await sendCommand({
         instruction,
         position: { x: parseInt(x), y: parseInt(y) },
       });
@@ -35,11 +35,11 @@ export const parseCommands = (commands: string[]) => {
       }
       // convert string to enum
       const direction = <Direction>commands[1];
-      sendCommand({ instruction, direction });
+      await sendCommand({ instruction, direction });
       break;
     default:
       // handle LEFT, RIGHT, RETREAT and REPORT here
-      sendCommand({ instruction });
+      await sendCommand({ instruction });
       break;
   }
 };
