@@ -25,7 +25,7 @@ if (!boardKey) {
   });
   reader.prompt();
 
-  reader.on("line", (line) => {
+  reader.on("line", async (line) => {
     const commands = line
       .trim()
       .toUpperCase()
@@ -49,14 +49,16 @@ if (!boardKey) {
           break;
         }
         // valid command at this point
-        parseCommands(commands).catch((error) => {
+        try {
+          await parseCommands(commands);
+        } catch (error) {
           if (error instanceof Error) {
             console.log(error.message);
           } else {
             console.log(error);
           }
           reader.prompt();
-        });
+        }
 
         break;
     }
