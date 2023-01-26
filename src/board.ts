@@ -1,13 +1,15 @@
-import { Command, Direction, ICommand } from "./common";
+import { Command, Direction, ICommand, IPosition } from "./common";
+import MovementError from "./errors/movement";
+import PositionError from "./errors/position";
 import RedisConnector from "./redisConnector";
 
 const redisClient = new RedisConnector("Board subscriber");
 const publisher = new RedisConnector("Board publisher");
 
-const robot = {
-  direction: Direction.NORTH,
-  position: { x: 1, y: 1 },
-};
+interface IRobot {
+  direction: Direction;
+  position: IPosition;
+}
 
 const safeConvert = (variable?: string) => {
   if (!variable) {
@@ -22,6 +24,7 @@ const safeConvert = (variable?: string) => {
 
 const maxX = safeConvert(process.env.BOARD_WIDTH);
 const maxY = safeConvert(process.env.BOARD_HEIGHT);
+const Increment = safeConvert(process.env.INCREMENT ?? "1");
 
 const boardKey = process.env.REDIS_FEEDBACK_KEY;
 if (!boardKey) {
@@ -32,6 +35,84 @@ const publish = (message: string) => {
   publisher.redis.publish(boardKey, message);
 };
 
+const moveRobot = (robot: IRobot, distance: number = Increment): IPosition => {
+  let { x, y } = { ...robot.position };
+  const direction = robot.direction;
+  switch (direction) {
+    case Direction.NORTH:
+      y = y + distance;
+      break;
+    case Direction.SOUTH:
+      y = y - distance;
+      break;
+    case Direction.EAST:
+      x = x + distance;
+      break;
+    case Direction.WEST:
+      x = x - distance;
+      break;
+    default:
+      break;
+  }
+
+  if (y > maxY) {
+    throw new MovementError("Fell off the N edge");
+  }
+  if (y === 0) {
+    throw new MovementError("Fell off the S edge");
+  }
+  if (x > maxX) {
+    throw new MovementError("Fell off the E edge");
+  }
+  if (x === 0) {
+    throw new MovementError("Fell off the W edge");
+  }
+  return { x, y };
+};
+
+const placeRobot = (robot: IRobot, position: IPosition): IPosition => {
+  if (position.x < 1 || position.x > maxX) {
+    throw new PositionError("X-position is out of bounds");
+  }
+  if (position.y < 1 || position.y > maxY) {
+    throw new PositionError("Y-position is out of bounds");
+  }
+  return position;
+};
+
+const turnRobotLeft = (direction: Direction): Direction => {
+  switch (direction) {
+    case Direction.NORTH:
+      return Direction.WEST;
+    case Direction.SOUTH:
+      return Direction.EAST;
+    case Direction.EAST:
+      return Direction.NORTH;
+    default:
+      // west
+      return Direction.SOUTH;
+  }
+  return direction;
+};
+
+const turnRobotRight = (direction: Direction): Direction => {
+  switch (direction) {
+    case Direction.NORTH:
+      return Direction.EAST;
+    case Direction.SOUTH:
+      return Direction.WEST;
+    case Direction.EAST:
+      return Direction.SOUTH;
+    default:
+      // west
+      return Direction.NORTH;
+  }
+};
+
+const robotStatus = (robot: IRobot) => {
+  return { ...robot };
+};
+
 export const initBoard = async () => {
   const key = process.env.REDIS_KEY;
   if (!key) {
@@ -40,129 +121,55 @@ export const initBoard = async () => {
 
   await Promise.all([redisClient.connect(), publisher.connect()]);
 
+  const robot: IRobot = {
+    direction: Direction.NORTH,
+    position: { x: 1, y: 1 },
+  };
+
   await redisClient.redis.subscribe(key, (message: string) => {
     const command: ICommand = JSON.parse(message);
-    const posX = robot.position.x;
-    const posY = robot.position.y;
     switch (command.instruction) {
       case Command.PLACE:
-        const { position } = command;
-        if (!position) {
+        if (!command.position) {
           break;
         }
-        if (position.x < 1 || position.x > maxX) {
-          publish("Board: X-position is out of bounds");
-          break;
+        try {
+          robot.position = placeRobot(robot, command.position);
+        } catch (error) {
+          if (error instanceof PositionError) {
+            publish(`Board: ${error.message}`);
+          } else {
+            throw error;
+          }
         }
-        if (position.y < 1 || position.y > maxY) {
-          publish("Board: Y-position is out of bounds");
-          break;
-        }
-        robot.position = { ...position };
         break;
       case Command.MOVE:
-        switch (robot.direction) {
-          case Direction.NORTH:
-            if (posY === maxY) {
-              publish("Bonk. Fell off the N edge");
-              break;
-            }
-            robot.position.y = posY + 1;
-            break;
-          case Direction.SOUTH:
-            if (posY === 1) {
-              publish("Bonk. Fell off the S edge");
-              break;
-            }
-            robot.position.y = posY - 1;
-            break;
-          case Direction.EAST:
-            if (posX === maxX) {
-              publish("Bonk. Fell off the E edge");
-              break;
-            }
-            robot.position.x = posX + 1;
-            break;
-          case Direction.WEST:
-            if (posX === 1) {
-              publish("Bonk. Fell off the W edge");
-              break;
-            }
-            robot.position.x = posX - 1;
-            break;
-          default:
-            break;
+        try {
+          robot.position = moveRobot(robot);
+        } catch (error) {
+          if (error instanceof MovementError) {
+            publish(`Board: ${error.message}`);
+          } else {
+            throw error;
+          }
         }
         break;
       case Command.RETREAT:
-        switch (robot.direction) {
-          case Direction.NORTH:
-            if (posY === 1) {
-              publish("Bonk. Fell off the S edge");
-              break;
-            }
-            robot.position.y = posY - 1;
-            break;
-          case Direction.SOUTH:
-            if (posY === maxY) {
-              publish("Bonk. Fell off the N edge");
-              break;
-            }
-            robot.position.y = posY + 1;
-            break;
-          case Direction.EAST:
-            if (posX === 1) {
-              publish("Bonk. Fell off the W edge");
-              break;
-            }
-            robot.position.x = posX - 1;
-            break;
-          case Direction.WEST:
-            if (posX === maxX) {
-              publish("Bonk. Fell off the E edge");
-              break;
-            }
-            robot.position.x = posX + 1;
-            break;
-          default:
-            break;
+        try {
+          robot.position = moveRobot(robot, -Increment);
+        } catch (error) {
+          if (error instanceof MovementError) {
+            publish(`Board: ${error.message}`);
+          } else {
+            throw error;
+          }
         }
         break;
       case Command.LEFT:
-        switch (robot.direction) {
-          case Direction.NORTH:
-            robot.direction = Direction.WEST;
-            break;
-          case Direction.SOUTH:
-            robot.direction = Direction.EAST;
-            break;
-          case Direction.EAST:
-            robot.direction = Direction.NORTH;
-            break;
-          case Direction.WEST:
-            robot.direction = Direction.SOUTH;
-            break;
-          default:
-            break;
-        }
+        robot.direction = turnRobotLeft(robot.direction);
         break;
       case Command.RIGHT:
-        switch (robot.direction) {
-          case Direction.NORTH:
-            robot.direction = Direction.EAST;
-            break;
-          case Direction.SOUTH:
-            robot.direction = Direction.WEST;
-            break;
-          case Direction.EAST:
-            robot.direction = Direction.SOUTH;
-            break;
-          case Direction.WEST:
-            robot.direction = Direction.NORTH;
-            break;
-          default:
-            break;
-        }
+        robot.direction = turnRobotRight(robot.direction);
         break;
       case Command.DIRECTION:
         if (!command.direction) {
@@ -171,7 +178,7 @@ export const initBoard = async () => {
         robot.direction = command.direction;
         break;
       case Command.REPORT:
-        publish(JSON.stringify(robot));
+        publish(JSON.stringify(robotStatus(robot)));
         break;
       default:
         break;
