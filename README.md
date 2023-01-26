@@ -25,7 +25,7 @@ BOARD_HEIGHT=10
 
 Update the REDIS keys according to where and how Redis is running.
 
-After the demo has been cloned from the repository, the `npm` modeules should be installed:  
+After the demo has been cloned from the repository, the npm modules should be installed:  
 
     yarn install
 ## Running the demo
@@ -65,7 +65,7 @@ Terminates the demo and returns control to the OS.
 Take note that the robot handler will accept only valid cardinal directions of NORTH, SOUTH, EAST and WEST.
 
 ## Testing
-Testing is done with jest. To run the test suites, run on the robot controller console:
+Testing is done with jest. To run the test suites, run on the OS console:
 
     yarn test
 
