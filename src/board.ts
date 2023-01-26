@@ -1,15 +1,11 @@
-import { Command, Direction, ICommand, IPosition } from "./common";
+import { Command, Direction, ICommand, IPosition, IRobot } from "./common";
 import MovementError from "./errors/movement";
 import PositionError from "./errors/position";
+import { EdgeFall } from "./errors/texts";
 import RedisConnector from "./redisConnector";
 
 const redisClient = new RedisConnector("Board subscriber");
 const publisher = new RedisConnector("Board publisher");
-
-interface IRobot {
-  direction: Direction;
-  position: IPosition;
-}
 
 const safeConvert = (variable?: string) => {
   if (!variable) {
@@ -35,7 +31,7 @@ const publish = (message: string) => {
   publisher.redis.publish(boardKey, message);
 };
 
-const moveRobot = (robot: IRobot, distance: number = Increment): IPosition => {
+export const moveRobot = (robot: IRobot, distance: number = Increment): IPosition => {
   let { x, y } = { ...robot.position };
   const direction = robot.direction;
   switch (direction) {
@@ -56,21 +52,21 @@ const moveRobot = (robot: IRobot, distance: number = Increment): IPosition => {
   }
 
   if (y > maxY) {
-    throw new MovementError("Fell off the N edge");
+    throw new MovementError(EdgeFall.NORTH);
   }
   if (y === 0) {
-    throw new MovementError("Fell off the S edge");
+    throw new MovementError(EdgeFall.SOUTH);
   }
   if (x > maxX) {
-    throw new MovementError("Fell off the E edge");
+    throw new MovementError(EdgeFall.EAST);
   }
   if (x === 0) {
-    throw new MovementError("Fell off the W edge");
+    throw new MovementError(EdgeFall.WEST);
   }
   return { x, y };
 };
 
-const placeRobot = (robot: IRobot, position: IPosition): IPosition => {
+export const placeRobot = (position: IPosition): IPosition => {
   if (position.x < 1 || position.x > maxX) {
     throw new PositionError("X-position is out of bounds");
   }
@@ -80,7 +76,7 @@ const placeRobot = (robot: IRobot, position: IPosition): IPosition => {
   return position;
 };
 
-const turnRobotLeft = (direction: Direction): Direction => {
+export const turnRobotLeft = (direction: Direction): Direction => {
   switch (direction) {
     case Direction.NORTH:
       return Direction.WEST;
@@ -95,7 +91,7 @@ const turnRobotLeft = (direction: Direction): Direction => {
   return direction;
 };
 
-const turnRobotRight = (direction: Direction): Direction => {
+export const turnRobotRight = (direction: Direction): Direction => {
   switch (direction) {
     case Direction.NORTH:
       return Direction.EAST;
@@ -109,7 +105,11 @@ const turnRobotRight = (direction: Direction): Direction => {
   }
 };
 
-const robotStatus = (robot: IRobot) => {
+export const turnRobotTo = (direction: Direction): Direction => {
+  return direction;
+}
+
+export const robotStatus = (robot: IRobot) => {
   return { ...robot };
 };
 
@@ -134,7 +134,7 @@ export const initBoard = async () => {
           break;
         }
         try {
-          robot.position = placeRobot(robot, command.position);
+          robot.position = placeRobot(command.position);
         } catch (error) {
           if (error instanceof PositionError) {
             publish(`Board: ${error.message}`);
@@ -175,7 +175,7 @@ export const initBoard = async () => {
         if (!command.direction) {
           break;
         }
-        robot.direction = command.direction;
+        robot.direction = turnRobotTo(command.direction);
         break;
       case Command.REPORT:
         publish(JSON.stringify(robotStatus(robot)));

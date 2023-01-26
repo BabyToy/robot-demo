@@ -9,7 +9,7 @@ All commands should be discarded until a valid place command has been executed.
 
 ## Implementation and Setup
 ### Redis
-This demo requires a running instance of Redis to allow communication between the console and the board/robot.
+This demo requires a running instance of Redis to allow communication between the robot controller console and the board/robot.
 
 ### Environment
 This demo requires an `.env` file, a sample of which is provided below.
@@ -45,7 +45,7 @@ Moves the robot to a new position on the board.
 Turns the robot to a new direction.
 
     MOVE
-Moves the robot forward one space depending on the the direction that the robot is facing.
+Moves the robot forward one space depending on the the direction it is facing.
 
     LEFT
 Turns the robot to the left.
@@ -62,6 +62,14 @@ The robot moves backwards one space while keeping the direction.
     QUIT
 Terminates the demo and returns control to the OS.
 
+Take note that the robot handler will accept only valid cardinal directions of NORTH, SOUTH, EAST and WEST.
+
+## Testing
+Testing is done with jest. To run the test suites, run on the robot controller console:
+
+    yarn test
+
+A valid `.env` file must be in the `tests/` folder to run successfully. It is recommended to copy the existing `.env` to `tests/` to test the existing configuration.
 
 
 

@@ -4,12 +4,16 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^29.4.0",
     "@types/node": "^18.11.18",
+    "jest": "^29.4.0",
     "nodemon": "^2.0.20",
+    "ts-jest": "^29.0.5",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.4"
   },
   "scripts": {
+    "test": "jest --env=node --colors",
     "build": "tsc -p tsconfig.json",
     "start:inspect": "nodemon --watch src/** --ext \"ts,json\" --exec \"node --require ts-node/register --inspect src/index.ts\""
   },

@@ -29,3 +29,8 @@ export interface ICommand {
   position?: IPosition;
   direction?: Direction;
 }
+
+export interface IRobot {
+  direction: Direction;
+  position: IPosition;
+}
